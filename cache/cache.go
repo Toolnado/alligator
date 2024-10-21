@@ -4,11 +4,7 @@ import (
 	"errors"
 	"sync"
 	"time"
-
-	"github.com/Toolnado/alligator/cache/interfaces"
 )
-
-var _ interfaces.Cache = New()
 
 type Cache struct {
 	mu   sync.RWMutex
