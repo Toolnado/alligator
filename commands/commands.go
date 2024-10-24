@@ -21,28 +21,40 @@ var ErrorInvalidLength = errors.New("invalid parts len")
 var ErrorInvalidCommand = errors.New("invalid command")
 
 // SET key value 1000ms
-func ParseSetCommand(parts []string) (*messages.SetMessage, error) {
+func ParseSetCommand(parts []string) (messages.FullCommandMessage, error) {
 	if len(parts) != 3 {
 		return nil, ErrorInvalidLength
 	}
 	ttl, err := time.ParseDuration(parts[2])
 	if err != nil {
-		return nil, fmt.Errorf("invalid ttl value: %s", parts[2])
+		return nil, fmt.Errorf("invalid ttl value: %s", err)
 	}
 
-	return &messages.SetMessage{
+	return &messages.Message{
 		Key:   parts[0],
 		Value: []byte(parts[1]),
 		TTL:   ttl,
 	}, nil
 }
 
-func ParseGetCommand(parts []string) (*messages.GetMessage, error) {
+func ParseGetCommand(parts []string) (messages.CommandMessage, error) {
+	return defaultHandler(parts)
+}
+
+func ParseDeleteCommand(parts []string) (messages.CommandMessage, error) {
+	return defaultHandler(parts)
+}
+
+func ParseHasCommand(parts []string) (messages.CommandMessage, error) {
+	return defaultHandler(parts)
+}
+
+func defaultHandler(parts []string) (messages.CommandMessage, error) {
 	if len(parts) != 1 {
 		return nil, ErrorInvalidLength
 	}
 
-	return &messages.GetMessage{
+	return &messages.Message{
 		Key: parts[0],
 	}, nil
 }
