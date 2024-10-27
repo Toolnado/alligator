@@ -30,7 +30,15 @@ func (c *Cache) Set(key string, value []byte, ttl time.Duration) error {
 		value: value,
 		ttl:   ttl,
 	}
+	go c.deleteByTTL(ttl, key)
 	return nil
+}
+
+func (c *Cache) deleteByTTL(ttl time.Duration, key string) {
+	<-time.After(ttl)
+	c.mu.Lock()
+	delete(c.data, key)
+	c.mu.Unlock()
 }
 
 func (c *Cache) Get(key string) ([]byte, error) {
