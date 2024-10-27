@@ -58,44 +58,45 @@ func (s *Server) handleConn(conn net.Conn) {
 }
 
 func (s *Server) handleCommand(conn net.Conn, raw []byte) {
-	cmd, err := commands.ParseCommand(raw)
+	cmd := commands.New(raw)
+	msg, err := cmd.Parse()
 	if err != nil {
-		log.Println("parse command error:", err)
+		// TODO:respond
 		return
 	}
-	switch cmd.Name {
+	switch msg.Command() {
 	case commands.SET_COMMAND:
-		if err := s.handleSetCommand(cmd); err != nil {
+		if err := s.handleSetCommand(msg); err != nil {
 			// TODO:respond
 			return
 		}
 	case commands.GET_COMMAND:
-		if err := s.handleGetCommand(conn, cmd); err != nil {
+		if err := s.handleGetCommand(conn, msg); err != nil {
 			// TODO:respond
 			return
 		}
 	case commands.DELETE_COMMAND:
-		if err := s.handleDeleteCommand(cmd); err != nil {
+		if err := s.handleDeleteCommand(msg); err != nil {
 			// TODO:respond
 			return
 		}
 	case commands.HAS_COMMAND:
-		if err := s.handleHasCommand(conn, cmd); err != nil {
+		if err := s.handleHasCommand(conn, msg); err != nil {
 			// TODO:respond
 			return
 		}
 	}
 }
 
-func (s *Server) handleSetCommand(cmd commands.CMD) error {
-	if err := s.Opts.Cache.Set(cmd.Key, cmd.Value, cmd.TTL); err != nil {
+func (s *Server) handleSetCommand(msg commands.Message) error {
+	if err := s.Opts.Cache.Set(msg.Key(), msg.Value(), msg.TTL()); err != nil {
 		return fmt.Errorf("server.handleSetCommand error: %s", err)
 	}
 	return nil
 }
 
-func (s *Server) handleGetCommand(conn net.Conn, cmd commands.CMD) error {
-	if value, err := s.Opts.Cache.Get(cmd.Key); err != nil {
+func (s *Server) handleGetCommand(conn net.Conn, msg commands.Message) error {
+	if value, err := s.Opts.Cache.Get(msg.Key()); err != nil {
 		return fmt.Errorf("server.handleGetCommand error: %s", err)
 	} else {
 		if _, err = conn.Write(value); err != nil {
@@ -105,15 +106,15 @@ func (s *Server) handleGetCommand(conn net.Conn, cmd commands.CMD) error {
 	return nil
 }
 
-func (s *Server) handleDeleteCommand(cmd commands.CMD) error {
-	if err := s.Opts.Cache.Delete(cmd.Key); err != nil {
+func (s *Server) handleDeleteCommand(msg commands.Message) error {
+	if err := s.Opts.Cache.Delete(msg.Key()); err != nil {
 		return fmt.Errorf("server.handleDeleteCommand error: %s", err)
 	}
 	return nil
 }
 
-func (s *Server) handleHasCommand(conn net.Conn, cmd commands.CMD) error {
-	exist := s.Opts.Cache.Has(cmd.Key)
+func (s *Server) handleHasCommand(conn net.Conn, msg commands.Message) error {
+	exist := s.Opts.Cache.Has(msg.Key())
 	if _, err := conn.Write([]byte(strconv.FormatBool(exist))); err != nil {
 		return fmt.Errorf("server.handleHasCommand error: %s", err)
 	}

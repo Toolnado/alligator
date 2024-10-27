@@ -7,71 +7,76 @@ import (
 	"time"
 )
 
-type CommandName string
+type Command string
 
 type CMD struct {
-	Name  CommandName
-	Key   string
-	Value []byte
-	TTL   time.Duration
+	raw []byte
 }
 
 const (
-	SET_COMMAND    CommandName = "SET"
-	GET_COMMAND    CommandName = "GET"
-	DELETE_COMMAND CommandName = "DELETE"
-	HAS_COMMAND    CommandName = "HAS"
+	SET_COMMAND    Command = "SET"
+	GET_COMMAND    Command = "GET"
+	DELETE_COMMAND Command = "DELETE"
+	HAS_COMMAND    Command = "HAS"
 )
 
 var ErrorInvalidProtocolFormat = errors.New("invalid protocol format")
 var ErrorInvalidCommand = errors.New("invalid command")
 
-func ParseCommand(raw []byte) (CMD, error) {
+func New(raw []byte) CMD {
+	return CMD{
+		raw: raw,
+	}
+}
+
+func (cmd CMD) Parse() (Message, error) {
 	var (
-		cmd         = CMD{}
-		removeBytes = strings.TrimSuffix(string(raw), "\r\n")
+		removeBytes = strings.TrimSuffix(string(cmd.raw), "\r\n")
 		parts       = strings.Split(removeBytes, " ")
+		name        = Command(parts[0])
+		key         string
+		value       []byte
+		ttl         time.Duration
 	)
 
 	if len(parts) == 0 {
-		return cmd, ErrorInvalidProtocolFormat
+		return Message{}, ErrorInvalidProtocolFormat
 	}
 
-	cmd.Name = CommandName(parts[0])
-
-	switch cmd.Name {
+	switch name {
 	case SET_COMMAND:
 		if len(parts) < 4 {
-			return cmd, ErrorInvalidProtocolFormat
+			return Message{}, ErrorInvalidProtocolFormat
 		}
-		cmd.Key = parts[1]
-		cmd.Value = []byte(parts[2])
-		ttl, err := time.ParseDuration(parts[3])
+		key = parts[1]
+		value = []byte(parts[2])
+		latency, err := time.ParseDuration(parts[3])
 		if err != nil {
-			return cmd, fmt.Errorf("invalid ttl format: %s", err)
+			return Message{}, fmt.Errorf("invalid ttl format: %s", err)
 		}
-		cmd.TTL = ttl
+		ttl = latency
 
 	case GET_COMMAND:
 		if len(parts) < 2 {
-			return cmd, ErrorInvalidProtocolFormat
+			return Message{}, ErrorInvalidProtocolFormat
 		}
-		cmd.Key = parts[1]
+		key = parts[1]
 
 	case HAS_COMMAND:
 		if len(parts) < 2 {
-			return cmd, ErrorInvalidProtocolFormat
+			return Message{}, ErrorInvalidProtocolFormat
 		}
-		cmd.Key = parts[1]
+		key = parts[1]
 
 	case DELETE_COMMAND:
 		if len(parts) < 2 {
-			return cmd, ErrorInvalidProtocolFormat
+			return Message{}, ErrorInvalidProtocolFormat
 		}
-		cmd.Key = parts[1]
+		key = parts[1]
 	default:
-		return cmd, ErrorInvalidCommand
+		return Message{}, ErrorInvalidCommand
 	}
 
-	return cmd, nil
+	msg := newMessage(name, key, value, ttl)
+	return msg, nil
 }
