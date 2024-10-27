@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"strings"
 
 	"github.com/Toolnado/alligator/cache/interfaces"
 	"github.com/Toolnado/alligator/commands"
@@ -13,7 +12,7 @@ import (
 
 type Options struct {
 	Addr  string
-	Cache interfaces.Cache
+	Cache interfaces.Cacher
 }
 
 type Server struct {
@@ -54,15 +53,12 @@ func (s *Server) handleConn(conn net.Conn) {
 		}
 
 		bufMSG := buf[:n]
-		removeBytes := strings.TrimSuffix(string(bufMSG), "\r\n")
-		parts := strings.Split(removeBytes, " ")
-
-		go s.handleCommand(conn, parts)
+		go s.handleCommand(conn, bufMSG)
 	}
 }
 
-func (s *Server) handleCommand(conn net.Conn, parts []string) {
-	cmd, err := commands.ParseCommand(parts)
+func (s *Server) handleCommand(conn net.Conn, raw []byte) {
+	cmd, err := commands.ParseCommand(raw)
 	if err != nil {
 		log.Println("parse command error:", err)
 		return

@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -25,8 +26,13 @@ const (
 var ErrorInvalidProtocolFormat = errors.New("invalid protocol format")
 var ErrorInvalidCommand = errors.New("invalid command")
 
-func ParseCommand(parts []string) (CMD, error) {
-	cmd := CMD{}
+func ParseCommand(raw []byte) (CMD, error) {
+	var (
+		cmd         = CMD{}
+		removeBytes = strings.TrimSuffix(string(raw), "\r\n")
+		parts       = strings.Split(removeBytes, " ")
+	)
+
 	if len(parts) == 0 {
 		return cmd, ErrorInvalidProtocolFormat
 	}
