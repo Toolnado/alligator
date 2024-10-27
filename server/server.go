@@ -43,12 +43,17 @@ func (s *Server) ListenAndServe() error {
 }
 
 func (s *Server) handleConn(conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Println("server.handleConn error:", err)
+		}
+	}()
+
 	buf := make([]byte, 512)
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
-			log.Println("read conn error:", err)
+			log.Println("server.handleConn error:", err)
 			return
 		}
 
