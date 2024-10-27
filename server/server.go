@@ -65,35 +65,57 @@ func (s *Server) handleCommand(conn net.Conn, raw []byte) {
 	}
 	switch cmd.Name {
 	case commands.SET_COMMAND:
-		log.Println("handling the set command: ", cmd)
-		err = s.Opts.Cache.Set(cmd.Key, cmd.Value, cmd.TTL)
-		if err != nil {
-			log.Println("set command error:", err)
-		}
-	case commands.GET_COMMAND:
-		log.Println("handling the get command: ", cmd)
-		value, err := s.Opts.Cache.Get(cmd.Key)
-		if err != nil {
-			log.Println("get command error:", err)
+		if err := s.handleSetCommand(cmd); err != nil {
+			// TODO:respond
 			return
 		}
-		_, err = conn.Write(value)
-		if err != nil {
-			log.Println("write to conn error:", err)
+	case commands.GET_COMMAND:
+		if err := s.handleGetCommand(conn, cmd); err != nil {
+			// TODO:respond
+			return
 		}
 	case commands.DELETE_COMMAND:
-		log.Println("handling the delete command: ", cmd)
-		err = s.Opts.Cache.Delete(cmd.Key)
-		if err != nil {
-			log.Println("delete command error:", err)
+		if err := s.handleDeleteCommand(cmd); err != nil {
+			// TODO:respond
 			return
 		}
 	case commands.HAS_COMMAND:
-		log.Println("handling the has command: ", cmd)
-		exist := s.Opts.Cache.Has(cmd.Key)
-		_, err = conn.Write([]byte(strconv.FormatBool(exist)))
-		if err != nil {
-			log.Println("write to conn error:", err)
+		if err := s.handleHasCommand(conn, cmd); err != nil {
+			// TODO:respond
+			return
 		}
 	}
+}
+
+func (s *Server) handleSetCommand(cmd commands.CMD) error {
+	if err := s.Opts.Cache.Set(cmd.Key, cmd.Value, cmd.TTL); err != nil {
+		return fmt.Errorf("server.handleSetCommand error: %s", err)
+	}
+	return nil
+}
+
+func (s *Server) handleGetCommand(conn net.Conn, cmd commands.CMD) error {
+	if value, err := s.Opts.Cache.Get(cmd.Key); err != nil {
+		return fmt.Errorf("server.handleGetCommand error: %s", err)
+	} else {
+		if _, err = conn.Write(value); err != nil {
+			return fmt.Errorf("server.handleGetCommand error: %s", err)
+		}
+	}
+	return nil
+}
+
+func (s *Server) handleDeleteCommand(cmd commands.CMD) error {
+	if err := s.Opts.Cache.Delete(cmd.Key); err != nil {
+		return fmt.Errorf("server.handleDeleteCommand error: %s", err)
+	}
+	return nil
+}
+
+func (s *Server) handleHasCommand(conn net.Conn, cmd commands.CMD) error {
+	exist := s.Opts.Cache.Has(cmd.Key)
+	if _, err := conn.Write([]byte(strconv.FormatBool(exist))); err != nil {
+		return fmt.Errorf("server.handleHasCommand error: %s", err)
+	}
+	return nil
 }
