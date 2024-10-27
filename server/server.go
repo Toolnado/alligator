@@ -69,11 +69,13 @@ func (s *Server) handleCommand(conn net.Conn, parts []string) {
 	}
 	switch cmd.Name {
 	case commands.SET_COMMAND:
+		log.Println("handling the set command: ", cmd)
 		err = s.Opts.Cache.Set(cmd.Key, cmd.Value, cmd.TTL)
 		if err != nil {
 			log.Println("set command error:", err)
 		}
 	case commands.GET_COMMAND:
+		log.Println("handling the get command: ", cmd)
 		value, err := s.Opts.Cache.Get(cmd.Key)
 		if err != nil {
 			log.Println("get command error:", err)
@@ -84,12 +86,14 @@ func (s *Server) handleCommand(conn net.Conn, parts []string) {
 			log.Println("write to conn error:", err)
 		}
 	case commands.DELETE_COMMAND:
+		log.Println("handling the delete command: ", cmd)
 		err = s.Opts.Cache.Delete(cmd.Key)
 		if err != nil {
 			log.Println("delete command error:", err)
 			return
 		}
 	case commands.HAS_COMMAND:
+		log.Println("handling the has command: ", cmd)
 		exist := s.Opts.Cache.Has(cmd.Key)
 		_, err = conn.Write([]byte(strconv.FormatBool(exist)))
 		if err != nil {
