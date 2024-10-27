@@ -2,9 +2,9 @@ package interfaces
 
 import "time"
 
-type Cache interface {
-	Set(string, []byte, time.Duration) error
-	Get(string) ([]byte, error)
-	Delete(string) error
-	Has(string) bool
+type Cacher interface {
+	Set([]byte, []byte, time.Duration) error
+	Get([]byte) ([]byte, error)
+	Delete([]byte) error
+	Has([]byte) bool
 }

@@ -10,7 +10,7 @@ type CommandName string
 
 type CMD struct {
 	Name  CommandName
-	Key   string
+	Key   []byte
 	Value []byte
 	TTL   time.Duration
 }
@@ -25,7 +25,7 @@ const (
 var ErrorInvalidProtocolFormat = errors.New("invalid protocol format")
 var ErrorInvalidCommand = errors.New("invalid command")
 
-func ParseCommand(parts []string) (CMD, error) {
+func ParseCommand(parts [][]byte) (CMD, error) {
 	cmd := CMD{}
 	if len(parts) == 0 {
 		return cmd, ErrorInvalidProtocolFormat
@@ -40,7 +40,7 @@ func ParseCommand(parts []string) (CMD, error) {
 		}
 		cmd.Key = parts[1]
 		cmd.Value = []byte(parts[2])
-		ttl, err := time.ParseDuration(parts[3])
+		ttl, err := time.ParseDuration(string(parts[3]))
 		if err != nil {
 			return cmd, fmt.Errorf("invalid ttl format: %s", err)
 		}

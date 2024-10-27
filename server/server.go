@@ -1,11 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
 	"strconv"
-	"strings"
 
 	"github.com/Toolnado/alligator/cache/interfaces"
 	"github.com/Toolnado/alligator/commands"
@@ -13,7 +13,7 @@ import (
 
 type Options struct {
 	Addr  string
-	Cache interfaces.Cache
+	Cache interfaces.Cacher
 }
 
 type Server struct {
@@ -54,14 +54,14 @@ func (s *Server) handleConn(conn net.Conn) {
 		}
 
 		bufMSG := buf[:n]
-		removeBytes := strings.TrimSuffix(string(bufMSG), "\r\n")
-		parts := strings.Split(removeBytes, " ")
+		withoutNextStringBytes := bytes.TrimRight(bufMSG, "\r\n")
+		parts := bytes.Split(withoutNextStringBytes, []byte{' '})
 
 		go s.handleCommand(conn, parts)
 	}
 }
 
-func (s *Server) handleCommand(conn net.Conn, parts []string) {
+func (s *Server) handleCommand(conn net.Conn, parts [][]byte) {
 	cmd, err := commands.ParseCommand(parts)
 	if err != nil {
 		log.Println("parse command error:", err)
@@ -69,11 +69,13 @@ func (s *Server) handleCommand(conn net.Conn, parts []string) {
 	}
 	switch cmd.Name {
 	case commands.SET_COMMAND:
+		log.Println("handling SET command: ", cmd)
 		err = s.Opts.Cache.Set(cmd.Key, cmd.Value, cmd.TTL)
 		if err != nil {
 			log.Println("set command error:", err)
 		}
 	case commands.GET_COMMAND:
+		log.Println("handling GET command: ", cmd)
 		value, err := s.Opts.Cache.Get(cmd.Key)
 		if err != nil {
 			log.Println("get command error:", err)
@@ -84,12 +86,14 @@ func (s *Server) handleCommand(conn net.Conn, parts []string) {
 			log.Println("write to conn error:", err)
 		}
 	case commands.DELETE_COMMAND:
+		log.Println("handling DELETE command: ", cmd)
 		err = s.Opts.Cache.Delete(cmd.Key)
 		if err != nil {
 			log.Println("delete command error:", err)
 			return
 		}
 	case commands.HAS_COMMAND:
+		log.Println("handling HAS command: ", cmd)
 		exist := s.Opts.Cache.Has(cmd.Key)
 		_, err = conn.Write([]byte(strconv.FormatBool(exist)))
 		if err != nil {
