@@ -4,57 +4,68 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/Toolnado/alligator/messages"
 )
 
-type Command string
+type CommandName string
+
+type CMD struct {
+	Name  CommandName
+	Key   string
+	Value []byte
+	TTL   time.Duration
+}
 
 const (
-	SET_COMMAND    Command = "SET"
-	GET_COMMAND    Command = "GET"
-	DELETE_COMMAND Command = "DELETE"
-	HAS_COMMAND    Command = "HAS"
+	SET_COMMAND    CommandName = "SET"
+	GET_COMMAND    CommandName = "GET"
+	DELETE_COMMAND CommandName = "DELETE"
+	HAS_COMMAND    CommandName = "HAS"
 )
 
-var ErrorInvalidLength = errors.New("invalid parts len")
+var ErrorInvalidProtocolFormat = errors.New("invalid protocol format")
 var ErrorInvalidCommand = errors.New("invalid command")
 
-// SET key value 1000ms
-func ParseSetCommand(parts []string) (messages.FullCommandMessage, error) {
-	if len(parts) != 3 {
-		return nil, ErrorInvalidLength
-	}
-	ttl, err := time.ParseDuration(parts[2])
-	if err != nil {
-		return nil, fmt.Errorf("invalid ttl value: %s", err)
+func ParseCommand(parts []string) (CMD, error) {
+	cmd := CMD{}
+	if len(parts) == 0 {
+		return cmd, ErrorInvalidProtocolFormat
 	}
 
-	return &messages.Message{
-		Key:   parts[0],
-		Value: []byte(parts[1]),
-		TTL:   ttl,
-	}, nil
-}
+	cmd.Name = CommandName(parts[0])
 
-func ParseGetCommand(parts []string) (messages.CommandMessage, error) {
-	return defaultHandler(parts)
-}
+	switch cmd.Name {
+	case SET_COMMAND:
+		if len(parts) < 4 {
+			return cmd, ErrorInvalidProtocolFormat
+		}
+		cmd.Key = parts[1]
+		cmd.Value = []byte(parts[2])
+		ttl, err := time.ParseDuration(parts[3])
+		if err != nil {
+			return cmd, fmt.Errorf("invalid ttl format: %s", err)
+		}
+		cmd.TTL = ttl
 
-func ParseDeleteCommand(parts []string) (messages.CommandMessage, error) {
-	return defaultHandler(parts)
-}
+	case GET_COMMAND:
+		if len(parts) < 2 {
+			return cmd, ErrorInvalidProtocolFormat
+		}
+		cmd.Key = parts[1]
 
-func ParseHasCommand(parts []string) (messages.CommandMessage, error) {
-	return defaultHandler(parts)
-}
+	case HAS_COMMAND:
+		if len(parts) < 2 {
+			return cmd, ErrorInvalidProtocolFormat
+		}
+		cmd.Key = parts[1]
 
-func defaultHandler(parts []string) (messages.CommandMessage, error) {
-	if len(parts) != 1 {
-		return nil, ErrorInvalidLength
+	case DELETE_COMMAND:
+		if len(parts) < 2 {
+			return cmd, ErrorInvalidProtocolFormat
+		}
+		cmd.Key = parts[1]
+	default:
+		return cmd, ErrorInvalidCommand
 	}
 
-	return &messages.Message{
-		Key: parts[0],
-	}, nil
+	return cmd, nil
 }

@@ -54,37 +54,26 @@ func (s *Server) handleConn(conn net.Conn) {
 		}
 
 		bufMSG := buf[:n]
-		removeBytes := strings.TrimSuffix(string(bufMSG), "\x0d\x0a")
+		removeBytes := strings.TrimSuffix(string(bufMSG), "\r\n")
 		parts := strings.Split(removeBytes, " ")
-		if len(parts) < 2 {
-			log.Println("invalid parts")
-			return
-		}
 
 		go s.handleCommand(conn, parts)
 	}
 }
 
 func (s *Server) handleCommand(conn net.Conn, parts []string) {
-	switch commands.Command(parts[0]) {
+	cmd, err := commands.ParseCommand(parts)
+	if err != nil {
+		log.Println("parse command error:", err)
+	}
+	switch cmd.Name {
 	case commands.SET_COMMAND:
-		msg, err := commands.ParseSetCommand(parts[1:])
-		if err != nil {
-			log.Println("parse set command error:", err)
-			return
-		}
-		err = s.Opts.Cache.Set(msg.ItemKey(), msg.ItemValue(), msg.ItemTTL())
+		err = s.Opts.Cache.Set(cmd.Key, cmd.Value, cmd.TTL)
 		if err != nil {
 			log.Println("set command error:", err)
 		}
 	case commands.GET_COMMAND:
-		msg, err := commands.ParseGetCommand(parts[1:])
-		if err != nil {
-			log.Println("parse get command error:", err)
-			return
-		}
-
-		value, err := s.Opts.Cache.Get(msg.ItemKey())
+		value, err := s.Opts.Cache.Get(cmd.Key)
 		if err != nil {
 			log.Println("get command error:", err)
 			return
@@ -94,30 +83,16 @@ func (s *Server) handleCommand(conn net.Conn, parts []string) {
 			log.Println("write to conn error:", err)
 		}
 	case commands.DELETE_COMMAND:
-		msg, err := commands.ParseDeleteCommand(parts[1:])
-		if err != nil {
-			log.Println("parse delete command error:", err)
-			return
-		}
-
-		err = s.Opts.Cache.Delete(msg.ItemKey())
+		err = s.Opts.Cache.Delete(cmd.Key)
 		if err != nil {
 			log.Println("delete command error:", err)
 			return
 		}
 	case commands.HAS_COMMAND:
-		msg, err := commands.ParseHasCommand(parts[1:])
-		if err != nil {
-			log.Println("parse has command error:", err)
-			return
-		}
-
-		exist := s.Opts.Cache.Has(msg.ItemKey())
+		exist := s.Opts.Cache.Has(cmd.Key)
 		_, err = conn.Write([]byte(strconv.FormatBool(exist)))
 		if err != nil {
 			log.Println("write to conn error:", err)
 		}
-	default:
-		log.Println(commands.ErrorInvalidCommand)
 	}
 }
