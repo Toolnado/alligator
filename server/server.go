@@ -65,22 +65,22 @@ func (s *Server) handleCommand(conn net.Conn, raw []byte) {
 		return
 	}
 	switch msg.Command() {
-	case commands.SET_COMMAND:
+	case commands.SetCommand:
 		if err := s.handleSetCommand(msg); err != nil {
 			// TODO:respond
 			return
 		}
-	case commands.GET_COMMAND:
+	case commands.GetCommand:
 		if err := s.handleGetCommand(conn, msg); err != nil {
 			// TODO:respond
 			return
 		}
-	case commands.DELETE_COMMAND:
+	case commands.DeleteCommand:
 		if err := s.handleDeleteCommand(msg); err != nil {
 			// TODO:respond
 			return
 		}
-	case commands.HAS_COMMAND:
+	case commands.HasCommand:
 		if err := s.handleHasCommand(conn, msg); err != nil {
 			// TODO:respond
 			return

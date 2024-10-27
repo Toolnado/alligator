@@ -7,17 +7,17 @@ import (
 	"time"
 )
 
-type Command string
-
 type CMD struct {
 	raw []byte
 }
 
+type Command string
+
 const (
-	SET_COMMAND    Command = "SET"
-	GET_COMMAND    Command = "GET"
-	DELETE_COMMAND Command = "DELETE"
-	HAS_COMMAND    Command = "HAS"
+	SetCommand    Command = "SET"
+	GetCommand    Command = "GET"
+	DeleteCommand Command = "DELETE"
+	HasCommand    Command = "HAS"
 )
 
 var ErrorInvalidProtocolFormat = errors.New("invalid protocol format")
@@ -44,7 +44,7 @@ func (cmd CMD) Parse() (Message, error) {
 	}
 
 	switch name {
-	case SET_COMMAND:
+	case SetCommand:
 		if len(parts) < 4 {
 			return Message{}, ErrorInvalidProtocolFormat
 		}
@@ -56,19 +56,19 @@ func (cmd CMD) Parse() (Message, error) {
 		}
 		ttl = latency
 
-	case GET_COMMAND:
+	case GetCommand:
 		if len(parts) < 2 {
 			return Message{}, ErrorInvalidProtocolFormat
 		}
 		key = parts[1]
 
-	case HAS_COMMAND:
+	case HasCommand:
 		if len(parts) < 2 {
 			return Message{}, ErrorInvalidProtocolFormat
 		}
 		key = parts[1]
 
-	case DELETE_COMMAND:
+	case DeleteCommand:
 		if len(parts) < 2 {
 			return Message{}, ErrorInvalidProtocolFormat
 		}

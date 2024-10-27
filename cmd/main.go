@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	cche := cache.New()
+	instance := cache.New()
 	opts := server.Options{
 		Addr:  ":3000",
-		Cache: cche,
+		Cache: instance,
 	}
 	svr := server.New(opts, true)
 	log.Fatal(svr.ListenAndServe())

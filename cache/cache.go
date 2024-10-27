@@ -8,10 +8,10 @@ import (
 
 type Cache struct {
 	mu   sync.RWMutex
-	data map[string]*CacheItem
+	data map[string]*Item
 }
 
-type CacheItem struct {
+type Item struct {
 	value []byte
 	ttl   time.Duration
 }
@@ -19,14 +19,14 @@ type CacheItem struct {
 func New() *Cache {
 	return &Cache{
 		mu:   sync.RWMutex{},
-		data: make(map[string]*CacheItem, 0),
+		data: make(map[string]*Item),
 	}
 }
 
 func (c *Cache) Set(key string, value []byte, ttl time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.data[key] = &CacheItem{
+	c.data[key] = &Item{
 		value: value,
 		ttl:   ttl,
 	}
