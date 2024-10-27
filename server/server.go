@@ -65,6 +65,7 @@ func (s *Server) handleCommand(conn net.Conn, parts []string) {
 	cmd, err := commands.ParseCommand(parts)
 	if err != nil {
 		log.Println("parse command error:", err)
+		return
 	}
 	switch cmd.Name {
 	case commands.SET_COMMAND:
