@@ -12,14 +12,13 @@ func main() {
 	var (
 		addr       = flag.String("addr", ":3000", "listen address of the server")
 		leaderAddr = flag.String("laddr", "", "listen address of the leader server")
-		leader     = flag.Bool("l", true, "is the current server a leader")
 	)
 	flag.Parse()
 
 	opts := server.Options{
 		Addr:       *addr,
 		LeaderAddr: *leaderAddr,
-		Leader:     *leader,
+		Leader:     len(*leaderAddr) == 0,
 	}
 
 	svr := server.New(opts, cache.New())
