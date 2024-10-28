@@ -2,6 +2,7 @@ package cache
 
 import (
 	"errors"
+	"log"
 	"sync"
 	"time"
 )
@@ -24,6 +25,7 @@ func New() *Cache {
 }
 
 func (c *Cache) Set(key string, value []byte, ttl time.Duration) error {
+	log.Printf("SET command: key=%s, value=%s, ttl=%s\n", key, value, ttl)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data[key] = &Item{
@@ -42,6 +44,7 @@ func (c *Cache) deleteByTTL(ttl time.Duration, key string) {
 }
 
 func (c *Cache) Get(key string) ([]byte, error) {
+	log.Printf("GET command: key=%s\n", key)
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	value, ok := c.data[key]
@@ -52,6 +55,7 @@ func (c *Cache) Get(key string) ([]byte, error) {
 }
 
 func (c *Cache) Delete(key string) error {
+	log.Printf("DELETE command: key=%s\n", key)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.data, key)
@@ -59,6 +63,7 @@ func (c *Cache) Delete(key string) error {
 }
 
 func (c *Cache) Has(key string) bool {
+	log.Printf("HAS command: key=%s\n", key)
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	_, ok := c.data[key]
