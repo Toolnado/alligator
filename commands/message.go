@@ -1,6 +1,9 @@
 package commands
 
-import "time"
+import (
+	"bytes"
+	"time"
+)
 
 type Message struct {
 	cmd   Command
@@ -20,6 +23,20 @@ func (m Message) Value() []byte {
 }
 func (m Message) TTL() time.Duration {
 	return m.ttl
+}
+
+func (m Message) Bytes() []byte {
+	buf := bytes.Buffer{}
+	buf.WriteString(string(m.cmd))
+	buf.WriteString(" ")
+	buf.WriteString(m.key)
+	buf.WriteString(" ")
+	buf.Write(m.value)
+	buf.WriteString(" ")
+	buf.WriteString(m.ttl.String())
+	buf.WriteByte('\r')
+	buf.WriteByte('\n')
+	return buf.Bytes()
 }
 
 func newMessage(cmd Command, key string, value []byte, ttl time.Duration) Message {
