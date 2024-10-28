@@ -18,6 +18,7 @@ const (
 	GetCommand    Command = "GET"
 	DeleteCommand Command = "DELETE"
 	HasCommand    Command = "HAS"
+	JoinCommand   Command = "JOIN"
 )
 
 var ErrorInvalidProtocolFormat = errors.New("invalid protocol format")
@@ -73,6 +74,11 @@ func (cmd CMD) Parse() (Message, error) {
 			return Message{}, ErrorInvalidProtocolFormat
 		}
 		key = parts[1]
+	case JoinCommand:
+		if len(parts) < 1 {
+			return Message{}, ErrorInvalidProtocolFormat
+		}
+
 	default:
 		return Message{}, ErrorInvalidCommand
 	}
